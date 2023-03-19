@@ -18,8 +18,8 @@ To start we'll create a baseline model using:
 To predict:
 - CAUSE.CATEGORY (nominal variable describing the cause of a given power outage)
 
-Note: We are removing Alaska from our data because there are not enough observations to make it viable for our model. <br>
-Note: We are not using any ordinal data for this model.
+> We are removing Alaska from our data because there are not enough observations to make it viable for our model. <br>
+> Note: We are not using any ordinal data for this model.
 
 Let's grab our baseline data from our outage dataframe:
 
