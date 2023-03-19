@@ -22,6 +22,7 @@ Note: We are removing Alaska from our data because there are not enough observat
 Note: We are not using any ordinal data for this model.
 
 Let's grab our baseline data from our outage dataframe:
+
 ```py
 # Separate relevant data 
 baseline_data = outage[['U.S._STATE', 'OUTAGE.DURATION', 'CAUSE.CATEGORY', 'CUSTOMERS.AFFECTED']]
@@ -31,6 +32,7 @@ baseline_data = baseline_data[baseline_data['U.S._STATE'] != 'Alaska']
 ```
 
 Here's the baseline_data's head:
+
 | U.S._STATE   |   OUTAGE.DURATION | CAUSE.CATEGORY     |   CUSTOMERS.AFFECTED |
 |:-------------|------------------:|:-------------------|---------------------:|
 | Minnesota    |              3060 | severe weather     |                70000 |
