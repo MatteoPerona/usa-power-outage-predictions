@@ -106,9 +106,18 @@ Here we are using using a weighted average on each partial f1 score to come up w
 #### Baseline Model Performance
 
 Accuracy: 0.69
+
 F1: .61
 
-The baseline model seems to have 
+The baseline model seems to have given lukewarm results. While the accuracy is nearly 70% the F1 score is about .1 less, which tells us that recall (True Positive / All Actual Positive) is not stacking up. To give a better understanding here is a confusion matrix for this model. 
 
 <img src="./assets/output.png"
      alt="Markdown Monster icon"/>
+
+Pay attention to the diagonal, this is where the count of correct predictions lies. We can see that intentional attack, and severe weather are the only two categories which are being predicted with any accuracy. This makes sense because we can see that they are, by far, the most well represented categories in our dataset. If we did not take a weighted average when calculating our overall f1 score, it would be much lower since the model is really only able to predict those two categories. 
+
+So is this model good? I would conclude that it is not good because it can only predict two categories with any accuracy, and, even then, the model's recall is not very good. 
+
+## Final Model 
+
+
