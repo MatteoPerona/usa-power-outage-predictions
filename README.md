@@ -19,7 +19,7 @@ To predict:
 - CAUSE.CATEGORY (nominal variable describing the cause of a given power outage)
 
 > We are removing Alaska from our data because there are not enough observations to make it viable for our model. <br>
-> Note: We are not using any ordinal data for this model.
+> We are not using any ordinal data for this model.
 
 Let's grab our baseline data from our outage dataframe:
 
@@ -43,7 +43,7 @@ Here's the baseline_data's head:
 
 ### Step One: Train Test Split
 
-Our first step is to separate our data into training and testing data. We separate variables we are predicting from the rest of our data then sample our data at random, reserving 80% as training data to fit our model and 20% to test our model on unseen data. One important thing to note at this stage is that we had to stratify our data when splitting into training and testing sets using the U.S._STATE variable. This makes sure that both training and testing data have relatively equal proportions of observations from each state. Without this step, we could run into problems where not all states represented in the testing set were included -- and one-hot encoded -- with the training set.
+Our first step is to separate our data into training and testing data. We separate variables we are predicting from the rest of our data then sample our data at random, reserving 80% as training data to fit our model and 20% to test our model on unseen data.
 
 ```py
 df = baseline_data
@@ -55,6 +55,8 @@ y = df['CAUSE.CATEGORY']
 # Split into training and testing data (stratifying by U.S._State)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=X['U.S._STATE'])
 ```
+
+ One important thing to note at this stage is that we had to stratify our data when splitting into training and testing sets using the U.S._STATE variable. This makes sure that both training and testing data have relatively equal proportions of observations from each state. Without this step, we could run into problems where not all states represented in the testing set were included -- and one-hot encoded -- with the training set.
 
 ### Step Two: Preprocessing and Pipeline
 
@@ -85,3 +87,28 @@ pl = Pipeline([
 
 ### Step Three: Fit and Model Eval 
 
+Finally, we can fit our model with out training data and evaluate how "good" our predictions are.
+
+```py
+# Fit model to training data
+pl.fit(X_train, y_train)
+
+# Make predictions 
+y_pred = pl.predict(X_test)
+
+# Calculate accuracy and f1 score 
+acc = (y_pred == y_test).mean()
+f1 = f1_score(y_pred=y_pred, y_true=y_test, labels=y.unique(), average='weighted')
+```
+
+Here we are using using a weighted average on each partial f1 score to come up with out final value. This gives us the weighted average of the the harmonic means of precision and recall for each cause category: a value between 0 (worst) and 1 (best) telling us how well our model performed. 
+
+#### Baseline Model Performance
+
+Accuracy: 0.69
+F1: .61
+
+The baseline model seems to have 
+
+<img src="./assets/output.png"
+     alt="Markdown Monster icon"/>
