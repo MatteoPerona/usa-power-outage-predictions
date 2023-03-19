@@ -41,4 +41,47 @@ Here's the baseline_data's head:
 | Minnesota    |              2550 | severe weather     |                68200 |
 | Minnesota    |              1740 | severe weather     |               250000 |
 
+### Step One: Train Test Split
+
+Our first step is to separate our data into training and testing data. We separate variables we are predicting from the rest of our data then sample our data at random, reserving 80% as training data to fit our model and 20% to test our model on unseen data. One important thing to note at this stage is that we had to stratify our data when splitting into training and testing sets using the U.S._STATE variable. This makes sure that both training and testing data have relatively equal proportions of observations from each state. Without this step, we could run into problems where not all states represented in the testing set were included -- and one-hot encoded -- with the training set.
+
+```py
+df = baseline_data
+
+# Define X and y 
+X = df.drop(columns=['CAUSE.CATEGORY'])
+y = df['CAUSE.CATEGORY']
+
+# Split into training and testing data (stratifying by U.S._State)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=X['U.S._STATE'])
+```
+
+### Step Two: Preprocessing and Pipeline
+
+Next, we want to create our column transformer to preprocess our data and our pipeline to run the preprocesses and fit our model. 
+
+We are only using two transformers:
+- A KNNImputer to handle missing data in the OUTAGE.DURATION column
+- A OneHotEncoder to encode the nominal data in the U.S._STATE column
+
+I've gone for a random forest classifier here because it's [less influenced by outliers](https://stats.stackexchange.com/questions/187200/how-are-random-forests-not-sensitive-to-outliers) than other algorithms and can [implicitly handle multicollinearity](https://stats.stackexchange.com/questions/141619/wont-highly-correlated-variables-in-random-forest-distort-accuracy-and-feature). 
+
+```py
+# Stage all preprocessing steps
+preproc = ColumnTransformer(
+    transformers=[
+        ('impute_duration', KNNImputer(), ['OUTAGE.DURATION', 'CUSTOMERS.AFFECTED']),
+        ('one_hot', OneHotEncoder(), ['U.S._STATE']),
+    ],
+    remainder='passthrough'
+)
+
+# Create final pipeline
+pl = Pipeline([
+    ('preprocess', preproc), 
+    ('classifier', RandomForestClassifier(n_estimators=100, max_depth=6))
+])
+```
+
+### Step Three: Fit and Model Eval 
 
