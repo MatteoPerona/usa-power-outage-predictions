@@ -120,4 +120,27 @@ So is this model good? I would conclude that it is not good because it can only 
 
 ## Final Model 
 
+The final model will consist of the following variables for the following reasons:
+1. U.S._STATE (string; the name of the U.S. state in which the outage occurred)
+   - Lends geographical context to the data; certain outage causes are probably more common in select states
+2. ANOMALY.LEVEL (float64; This represents the oceanic El Niño/La Niña (ONI) index referring to the cold and warm episodes by season)
+   - Gives perspective on climate during that power outage. If El Niño is in full swing, it may be far more likely to see outages caused by extreme weather.
+3. OUTAGE.DURATION (float64; The duration of the power outage in minutes)
+   - Adds temporal context. Longer outages may be linked with select causes.
+5. DEMAND.LOSS.MW (float64; Amount of peak demand lost during an outage event (in Megawatt))
+   - Gives context to the extent of the power outage from the grid's perspective. Knowing the extent to which the outage impacted the grid could be very indicative of the type of cause of the outage. Certain causes probably lead to much more drastic losses.
+6. CUSTOMERS.AFFECTED (float64; Number of customers affected by the power outage event)
+   - Gives context to the extent of the power outage from a population perspective which could indicate. The number of people affected, like the amount of demand lost, could indicate higher likelihood for certain causes.
+7. AREAPCT_URBAN (float64; Percentage of the land area of the U.S. state represented by the land area of the urban areas)
+   - Adds context about land use. More urban land could indicate higher risk for intentional attacks, or, perhaps, less urban land would indicate a higher propensity for wind storms.
+8. PCT_LAND (float64; Percentage of land area in the U.S. state as compared to the overall land area in the continental U.S.)
+   - Describes the size of the state in which the outage occurred relative to other U.S. states. The smaller the state is the more titrated its list of climate related outages might be.
+9. PCT_WATER_TOT (float64; Percentage of water area in the U.S. state as compared to the overall water area in the continental U.S.)
+   - Describes the percentage of all water in the U.S. contained within the outage's state. This information could imply certain climate conditions which could indicate a higher propensity for certain types of power outage.
+10. POPULATION (int64; Population in the U.S. state in a year)
+   - This adds context to CUSTOMERS.AFFECTED and PCT_LAND. The proportion of people in the state affected by the outage as well as the proportion of people in the state relative to its size could both be important indicators of a given cause.
+
+>
+> OUTAGE.DURATION was removed from the final model since OUTAGE.START and OUTAGE.RESTORATION implicitly give the duration.
+>
 
