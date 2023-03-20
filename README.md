@@ -144,3 +144,143 @@ The final model will consist of the following variables for the following reason
 > OUTAGE.DURATION was removed from the final model since OUTAGE.START and OUTAGE.RESTORATION implicitly give the duration.
 >
 
+The broad strokes for the model creation are the same so I will put the code below and explain the differences after.
+
+```py
+# Separate relevant data 
+final_data = outage[[
+    'CAUSE.CATEGORY',
+    'U.S._STATE',
+    'ANOMALY.LEVEL', 
+    'OUTAGE.DURATION',
+    'DEMAND.LOSS.MW',
+    'CUSTOMERS.AFFECTED',
+    'AREAPCT_URBAN',
+    'PCT_LAND',
+    'PCT_WATER_TOT',
+    'POPULATION'
+]]
+
+# Remove Alaska from the data because there arent enough observations to include it in our model
+final_data = final_data[final_data['U.S._STATE'] != 'Alaska']
+
+# Define X and y 
+X = final_data.drop(columns=['CAUSE.CATEGORY'])
+y = final_data['CAUSE.CATEGORY']
+
+# Split into training and testing data (stratifying by U.S._State)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=X['U.S._STATE'])
+
+# Create transformer for datetimes
+dt_to_ts = lambda d: d.apply(
+    lambda col: col.apply(
+        lambda x: datetime.timestamp(s)))
+dt_transformer = FunctionTransformer(dt_to_ts)
+
+impute_and_standardize_standard = Pipeline(steps=[
+    ('impute', KNNImputer()),
+    ('standardize', StandardScaler()),
+])
+
+impute_and_standardize_quantile = Pipeline(steps=[
+    ('impute', KNNImputer()),
+    ('standardize', QuantileTransformer()),
+])
+
+# Stage all preprocessing steps
+preproc = ColumnTransformer(
+    transformers=[
+        ('impute_and_standardize_standard', impute_and_standardize_standard, [
+            'DEMAND.LOSS.MW', 
+            'CUSTOMERS.AFFECTED',
+            'OUTAGE.DURATION',
+            'AREAPCT_URBAN',
+            'PCT_LAND',
+            'PCT_WATER_TOT',
+            'POPULATION'
+            
+        ]),
+        ('impute_and_standardize_quantile', impute_and_standardize_quantile, [
+            'ANOMALY.LEVEL', 
+        ]),
+        ('one_hot', OneHotEncoder(), ['U.S._STATE']),
+    ],
+    remainder='passthrough'
+)
+```
+
+The main differences come in the form of ```impute_and_standardize_quantile``` and ```impute_and_standardize_standard```. Each of them imputes values using a KNNImputer then standardizes the data according to either QuantileTransformer or StandardScaler. In my tests, ANOMALY.LEVEL was the only variable which performed better when standardized using QuantileTransformer, perhaps because it had outliers. I fed the rest of my quantitative variables thorugh the standard pipeline. 
+
+Before moving to the next section I'll add that I'm going with RandomForest again for this final model for the same reasons that made me choose it in the baseline model. 
+
+### Hyperparameter Tuning 
+
+In this section, we'll iteratively find the best possible parameters for our random forest classifier. We do this using Sklearn's GridSearchCV which allows us to perform an exhaustive search for the best parameters by fitting all combinations of passed hyperparameters. The code looks like this:
+
+```py
+# Define Hyperparameters
+hyperparameters = {
+    'max_depth': [2, 3, 4, 5, 7, 10, 13, 15, 18, None], 
+    'n_estimators': [2, 5, 10, 20, 50, 100, 200],
+}
+
+# Hyperparameter Tuning
+# Create final pipeline with Grid Search to find best hyperparameters
+pl = Pipeline([
+    ('preprocess', preproc), 
+    ('hp_tuning', GridSearchCV(RandomForestClassifier(), hyperparameters, cv=5))
+])
+
+# Fit model to training data and calculate best params
+pl.fit(X_train, y_train)
+pl.steps[1][1].best_params_
+```
+
+By exctracting the grid search from our pipeline I'm able to retrieve the best parameters, which in this case were:```{'max_depth': None, 'n_estimators': 200}```. However, after further testing with more titrated hyperparameters I came up with: ```{'max_depth': 30, 'n_estimators': 65}```.
+
+Using these we can fit out final model:
+```py
+# Create final pipeline 
+pl = Pipeline([
+    ('preprocess', preproc), 
+    ('model', RandomForestClassifier(max_depth=30, n_estimators=65))
+])
+
+# Fit model to training data and calculate best params
+pl.fit(X_train, y_train)
+```
+
+### Model Eval
+
+As before we'll calculate the f1 score and accuracy:
+```py
+# Make predictions 
+y_pred = pl.predict(X_test)
+
+# Calculate accuracy 
+acc = (y_pred == y_test).mean()
+
+# Calculte f1 score 
+f1 = f1_score(y_pred=y_pred, y_true=y_test, labels=y.unique(), average='weighted')
+```
+Accuracy: 0.78
+
+F1: 0.76
+
+> Our values for accuracy and F1 are much more similar indicating that our Recall and Accuracy are performing at similar levels. The model improved!
+
+This is a massive improvement over our last model. We can attribute this to:
+1. Our broader set of input variables contributing more information which to contextualize our model.
+2. The extra feature engineering done to standardize the columns according to their data generating process.
+3. The hyperparameter tuning we did in the previous section. 
+
+Note that while the Accuracy went up by .09 the f1 score went up by 0.15! This means that our recall improved by a wide margin. In other words, our model is more precise and much better at capturing entire groups in its classification. 
+
+Let's take a look at the confusion matrix for this model. 
+
+<img src="./assets/final_model_confusion_matrix.png"
+     alt="final_model_confusion_matrix"/>
+
+Note the diagonal; it seems as though all categories have improved significantly in both recall and accuracy barring severe weather whose recall improved and accuracy diminished. It would be interesting to look into why the severe weather changed in such a way. None the less, the confusion matrix corroborates the changes we see to our f1 score. 
+
+In conclusion, is this model good? I would say that the model is ok. Remember that our f1 score is a weighted average of f1 scores for each cause category; many of which are still performing quite poorly: ```[0.87, 0.85 , 0.50, 0.11, 0.54, 0.43, 0.59]```. For this model to become "good" we would need to collect more data to get better predictions for categories that aren't severe weather or intentional attack. 
