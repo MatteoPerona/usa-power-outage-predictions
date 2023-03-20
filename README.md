@@ -215,7 +215,9 @@ Before moving to the next section I'll add that I'm going with RandomForest agai
 
 ### Hyperparameter Tuning 
 
-In this section, we'll iteratively find the best possible parameters for our random forest classifier. We do this using Sklearn's GridSearchCV which allows us to perform an exhaustive search for the best parameters by fitting all combinations of passed hyperparameters. The code looks like this:
+In this section, we'll iteratively find the best possible parameters for our random forest classifier. I'm tuning ```max_depth``` and ```n_estimators``` because they are the two most important paramenters to a random forest's functionality, and because tuning more parameters becomes extremely time heavy. ```max_depth``` governs the maximum height upto which the trees inside the forest can grow. ```n_estimators``` controls the number of trees inside the classifier. 
+
+We do this using Sklearn's GridSearchCV which allows us to perform an exhaustive search for the best parameters by fitting all combinations of passed hyperparameters. The code looks like this:
 
 ```py
 # Define Hyperparameters
