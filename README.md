@@ -286,3 +286,76 @@ Let's take a look at the confusion matrix for this model.
 Note the diagonal; it seems as though all categories have improved significantly in both recall and accuracy barring severe weather whose recall improved and accuracy diminished. It would be interesting to look into why the severe weather changed in such a way. None the less, the confusion matrix corroborates the changes we see to our f1 score. 
 
 In conclusion, is this model good? I would say that the model is ok. Remember that our f1 score is a weighted average of f1 scores for each cause category; many of which are still performing quite poorly: ```[0.87, 0.85 , 0.50, 0.11, 0.54, 0.43, 0.59]```. For this model to become "good" we would need to collect more data to get better predictions for categories that aren't severe weather or intentional attack. 
+
+# Fairness Analysis
+
+In this section we'll examine the fairness of the model we just trained. We will check whether the algorithm seems to have better predictions for outages which occur in **more populous states (>= 20M pop)** as compared to the **less populous states (< 20 M pop)** in the continental United States. To quantify this comparison we will be running a 500-rep permutation test using a significance level of 0.05 and f1 as our evaluation metric. 
+
+##### Hypothesis
+**Null:** Our model is fair. Its f1 score for populous states is roughly the same as that of less populous states. Any differences are due to random chance. 
+
+**Alt:** Our model is unfair. The f1 score for more populous states is significantly different from that of less populous states. 
+
+#### Run Test
+
+```py
+# Find populous/less populous states in testing data
+is_populous = X_test['POPULATION'] >= 20_000_000
+
+# Find observed f1
+observed_pred = pl.predict(X_test[is_populous])
+observed_f1 = f1_score(y_pred=observed_pred, y_true=y_test[is_populous], labels=y.unique(), average='weighted')
+print('Observed: ', observed_f1)
+
+
+# Run permutation test 
+n_repetitions = 500
+
+f1_scores = []
+for _ in range(n_repetitions):
+    # Shuffle the is_populous series
+    shuffled = np.random.permutation(is_populous)
+    
+    # Compute the test statistic 
+    test_pred = pl.predict(X_test[shuffled])
+    test_f1 = f1_score(y_pred=observed_pred, y_true=y_test[shuffled], labels=y.unique(), average='weighted')
+    f1_scores.append(test_f1)
+
+
+f1_scores[:10]
+```
+
+##### Out:
+
+```
+Observed:  0.5196368032188928
+
+[0.3146641791044776,
+ 0.15636105188343993,
+ 0.3584310589907605,
+ 0.3166774821544452,
+ 0.24184939961844912,
+ 0.2700027712894414,
+ 0.3056456846203764,
+ 0.23217247097844115,
+ 0.35600407055630934,
+ 0.2699545749513303]
+ ```
+
+
+#### P-Value
+
+```py
+# Calculate p-value
+(f1_scores >= observed_f1).mean()
+```
+
+##### Out:
+
+0.0
+
+
+### Conclusions
+
+<img src="./assets/biase_perm_test_empirical_dist_hist.html"
+     alt="biase_perm_test_empirical_dist_hist"/>
