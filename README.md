@@ -360,6 +360,7 @@ Observed:  0.5196368032188928
 <iframe 
     src="./assets/biase_perm_test_empirical_dist_hist.html"
     alt="biase_perm_test_empirical_dist_hist"
+    style="width:100%; height:500px;"
 ></iframe>
 
 We can clearly see that the p-value, 0.0, is less than our significance level, 0.05, so we reject our null hypothesis. This means that f1 scores resulting from predictions on more populous states are likely different from the f1 scores we get on less populous states. Our permutation test indicates that our algorithm may perform differently given a state's population. 
