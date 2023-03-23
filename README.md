@@ -211,11 +211,14 @@ The main differences come in the form of ```impute_and_standardize_quantile``` a
 
 Before moving to the next section I'll add that I'm going with RandomForest again for this final model for the same reasons that made me choose it in the baseline model. 
 
+**Todo** 
+- [] TALK ABOUT THE DATA GENERATING PROCESS IN THIS LAST PART!
+
 ### Hyperparameter Tuning 
 
 In this section, we'll iteratively find the best possible parameters for our random forest classifier. I'm tuning ```max_depth``` and ```n_estimators``` because they are the two most important paramenters to a random forest's functionality, and because tuning more parameters becomes extremely time heavy. ```max_depth``` governs the maximum height upto which the trees inside the forest can grow. ```n_estimators``` controls the number of trees inside the classifier. 
 
-We do this using Sklearn's GridSearchCV which allows us to perform an exhaustive search for the best parameters by fitting all combinations of passed hyperparameters. The code looks like this:
+We'll tune using Sklearn's GridSearchCV which allows us to perform an exhaustive search for the best parameters by fitting all combinations of passed hyperparameters. The code looks like this:
 
 ```py
 # Define Hyperparameters
@@ -236,7 +239,7 @@ pl.fit(X_train, y_train)
 pl.steps[1][1].best_params_
 ```
 
-By exctracting the grid search from our pipeline I'm able to retrieve the best parameters, which in this case were:```{'max_depth': None, 'n_estimators': 200}```. However, after further testing with more titrated hyperparameters I came up with: ```{'max_depth': 30, 'n_estimators': 65}```.
+By exctracting the grid search from our pipeline I'm able to retrieve the best parameters, which, in this case, were:```{'max_depth': None, 'n_estimators': 200}```. However, after further testing with more titrated hyperparameters I came up with: ```{'max_depth': 30, 'n_estimators': 65}```.
 
 Using these we can fit out final model:
 ```py
@@ -252,7 +255,7 @@ pl.fit(X_train, y_train)
 
 ### Model Eval
 
-As before we'll calculate the f1 score and accuracy:
+As before, we'll calculate the f1 score and accuracy:
 ```py
 # Make predictions 
 y_pred = pl.predict(X_test)
@@ -267,10 +270,10 @@ Accuracy: 0.78
 
 F1: 0.76
 
-> Our values for accuracy and F1 are much more similar indicating that our Recall and Accuracy are performing at similar levels. The model improved!
+> Our values for accuracy and F1 are much more similar indicating that our recall and accuracy are converging. The model improved!
 
 This is a massive improvement over our last model. We can attribute this to:
-1. Our broader set of input variables contributing more information which to contextualize our model.
+1. Our broader set of input variables contributing more dimensions for our model to work with.
 2. The extra feature engineering done to standardize the columns according to their data generating process.
 3. The hyperparameter tuning we did in the previous section. 
 
@@ -281,7 +284,19 @@ Let's take a look at the confusion matrix for this model.
 <img src="./assets/final_model_confusion_matrix.png"
      alt="final_model_confusion_matrix"/>
 
-Note the diagonal; it seems as though all categories have improved significantly in both recall and accuracy barring severe weather whose recall improved and accuracy diminished. It would be interesting to look into why the severe weather changed in such a way. None the less, the confusion matrix corroborates the changes we see to our f1 score. 
+Note the diagonal; it seems as though all categories have improved in both recall and accuracy barring some accuracy dips in islanding and severe weather. It would be interesting to look further into why severe weather experienced a marginal dip in accuracy. 
+
+#### Change In Accuracy and Recall Between Final and Baseline Models
+
+|                               |   accuracy |    recall |
+|:------------------------------|-----------:|----------:|
+| equipment failure             |  0.181818  | 0.4       |
+| fuel supply emergency         |  0.181818  | 0.4       |
+| intentional attack            |  0.19579   | 0.0497475 |
+| islanding                     | -0.0714286 | 0.1       |
+| public appeal                 |  0.4       | 0.857143  |
+| severe weather                | -0.0556978 | 0.149308  |
+| system operability disruption |  0.266667  | 0.470588  |
 
 In conclusion, is this model good? I would say that the model is ok. Remember that our f1 score is a weighted average of f1 scores for each cause category; many of which are still performing quite poorly: ```[0.87, 0.85 , 0.50, 0.11, 0.54, 0.43, 0.59]```. For this model to become "good" we would need to collect more data to get better predictions for categories that aren't severe weather or intentional attack. 
 
@@ -289,7 +304,7 @@ In conclusion, is this model good? I would say that the model is ok. Remember th
 
 In this section we'll examine the fairness of the model we just trained. We will check whether the algorithm seems to have better predictions for outages which occur in **more populous states (>= 20M pop)** as compared to the **less populous states (< 20 M pop)** in the continental United States. To quantify this comparison we will be running a 500-rep permutation test using a significance level of 0.05 and f1 as our evaluation metric. 
 
-##### Hypothesis
+#### Hypothesis
 **Null:** Our model is fair. Its f1 score for populous states is roughly the same as that of less populous states. Any differences are due to random chance. 
 
 **Alt:** Our model is unfair. The f1 score for more populous states is significantly different from that of less populous states. 
@@ -323,8 +338,8 @@ for _ in range(n_repetitions):
 f1_scores[:10]
 ```
 
-##### Out:
-
+ **Out:**
+ 
 ```
 Observed:  0.5196368032188928
 
@@ -348,9 +363,7 @@ Observed:  0.5196368032188928
 (f1_scores >= observed_f1).mean()
 ```
 
-##### Out:
-
-0.0
+**Out:** 0.0
 
 
 ### Conclusions
