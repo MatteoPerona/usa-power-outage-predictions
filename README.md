@@ -142,11 +142,7 @@ The final model will consist of the following variables for the following reason
 10. POPULATION (int64; Population in the U.S. state in a year)
    - This adds context to CUSTOMERS.AFFECTED and PCT_LAND. The proportion of people in the state affected by the outage as well as the proportion of people in the state relative to its size could both be important indicators of a given cause.
 
->
-> OUTAGE.DURATION was removed from the final model since OUTAGE.START and OUTAGE.RESTORATION implicitly give the duration.
->
-
-The broad strokes for the model creation are the same so I will put the code below and explain the differences after.
+The broad strokes for the model creation are the same so I will put the code below and explain the differences later.
 
 ```py
 # Separate relevant data 
