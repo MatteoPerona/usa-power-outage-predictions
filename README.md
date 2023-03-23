@@ -118,6 +118,8 @@ Pay attention to the diagonal, this is where the count of correct predictions li
 
 So is this model good? I would conclude that it is not good because it can only predict two categories with any accuracy, and, even then, the model's recall is not very good. 
 
+Let's make some improvements.
+
 ## Final Model 
 
 The final model will consist of the following variables for the following reasons:
@@ -287,7 +289,7 @@ Note the diagonal; it seems as though all categories have improved significantly
 
 In conclusion, is this model good? I would say that the model is ok. Remember that our f1 score is a weighted average of f1 scores for each cause category; many of which are still performing quite poorly: ```[0.87, 0.85 , 0.50, 0.11, 0.54, 0.43, 0.59]```. For this model to become "good" we would need to collect more data to get better predictions for categories that aren't severe weather or intentional attack. 
 
-# Fairness Analysis
+## Fairness Analysis
 
 In this section we'll examine the fairness of the model we just trained. We will check whether the algorithm seems to have better predictions for outages which occur in **more populous states (>= 20M pop)** as compared to the **less populous states (< 20 M pop)** in the continental United States. To quantify this comparison we will be running a 500-rep permutation test using a significance level of 0.05 and f1 as our evaluation metric. 
 
