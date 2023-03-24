@@ -180,26 +180,25 @@ impute_and_standardize_standard = Pipeline(steps=[
     ('standardize', StandardScaler()),
 ])
 
-impute_and_standardize_quantile = Pipeline(steps=[
+impute_and_standardize_robust = Pipeline(steps=[
     ('impute', KNNImputer()),
-    ('standardize', QuantileTransformer()),
+    ('standardize', RobustScaler()),
 ])
 
 # Stage all preprocessing steps
 preproc = ColumnTransformer(
     transformers=[
         ('impute_and_standardize_standard', impute_and_standardize_standard, [
-            'DEMAND.LOSS.MW', 
-            'CUSTOMERS.AFFECTED',
+            'ANOMALY.LEVEL', 
             'OUTAGE.DURATION',
+            'DEMAND.LOSS.MW',
+        ]),
+        ('impute_and_standardize_robust', impute_and_standardize_robust, [
+            'CUSTOMERS.AFFECTED',
             'AREAPCT_URBAN',
             'PCT_LAND',
             'PCT_WATER_TOT',
             'POPULATION'
-            
-        ]),
-        ('impute_and_standardize_quantile', impute_and_standardize_quantile, [
-            'ANOMALY.LEVEL', 
         ]),
         ('one_hot', OneHotEncoder(), ['U.S._STATE']),
     ],
@@ -207,12 +206,9 @@ preproc = ColumnTransformer(
 )
 ```
 
-The main differences come in the form of ```impute_and_standardize_quantile``` and ```impute_and_standardize_standard```. Each of them imputes values using a KNNImputer then standardizes the data according to either QuantileTransformer or StandardScaler. In my tests, ANOMALY.LEVEL was the only variable which performed better when standardized using QuantileTransformer, perhaps because it had outliers. I fed the rest of my quantitative variables thorugh the standard pipeline. 
+The main differences come in the form of ```impute_and_standardize_standard``` and ```impute_and_standardize_robust```. Each of them imputes values using a KNNImputer then standardizes the data according to either RobustScaler or StandardScaler. To understand why I passed the variables I did through the robust scaler we have to take a look at the data generating process. These variables are somewhat normal in their distributions, but very noisy with outliers. The robust scaler removes the median and scales using inter quartile range; this works better for cleaning up outliers in "messier" distributions as compared to a standard scaler which removes the mean and scaling to unit variance. The rest of my variables went through the standard scaler because they have clean right skew distributions and I wanted to preserve their shape.
 
 Before moving to the next section I'll add that I'm going with RandomForest again for this final model for the same reasons that made me choose it in the baseline model. 
-
-**Todo** 
-- [] TALK ABOUT THE DATA GENERATING PROCESS IN THIS LAST PART!
 
 ### Hyperparameter Tuning 
 
@@ -339,7 +335,7 @@ f1_scores[:10]
 ```
 
  **Out:**
- 
+
 ```
 Observed:  0.5196368032188928
 
@@ -354,7 +350,6 @@ Observed:  0.5196368032188928
  0.35600407055630934,
  0.2699545749513303]
  ```
-
 
 #### P-Value
 
